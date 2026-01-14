@@ -22,7 +22,7 @@ func CreateHNSWVectorIndex(ctx context.Context, collection *mongo.Collection, ve
 		fmt.Printf("Warning: Could not drop existing indexes: %v\n", err)
 	}
 
-	// Use the native MongoDB command for Cosmos DB vector indexes
+	// Use the native MongoDB command for DocumentDB vector indexes
 	// Note: Must use bson.D for commands to preserve order and avoid "multi-key map" errors
 	indexCommand := bson.D{
 		{"createIndexes", collection.Name()},
@@ -30,7 +30,7 @@ func CreateHNSWVectorIndex(ctx context.Context, collection *mongo.Collection, ve
 			{
 				{"name", fmt.Sprintf("hnsw_index_%s", vectorField)},
 				{"key", bson.D{
-					{vectorField, "cosmosSearch"}, // Cosmos DB vector search index type
+					{vectorField, "cosmosSearch"}, // DocumentDB vector search index type
 				}},
 				{"cosmosSearchOptions", bson.D{
 					// HNSW algorithm configuration
@@ -62,7 +62,7 @@ func CreateHNSWVectorIndex(ctx context.Context, collection *mongo.Collection, ve
 		if strings.Contains(err.Error(), "not enabled for this cluster tier") {
 			fmt.Println("\nHNSW indexes require a higher cluster tier.")
 			fmt.Println("Try one of these alternatives:")
-			fmt.Println("  • Upgrade your Cosmos DB cluster to a higher tier")
+			fmt.Println("  • Upgrade your DocumentDB cluster to a higher tier")
 			fmt.Println("  • Use IVF instead: go run src/ivf.go")
 			fmt.Println("  • Use DiskANN instead: go run src/diskann.go")
 		}
@@ -84,11 +84,11 @@ func PerformHNSWVectorSearch(ctx context.Context, collection *mongo.Collection, 
 	}
 
 	// Build aggregation pipeline for HNSW vector search
-	// Cosmos DB uses $search with cosmosSearch
+	// DocumentDB uses $search with cosmosSearch
 	pipeline := []bson.M{
 		{
 			"$search": bson.M{
-				// Use cosmosSearch for vector operations in Cosmos DB
+				// Use cosmosSearch for vector operations in DocumentDB
 				"cosmosSearch": bson.M{
 					// Query vector to find similar documents for
 					"vector": queryEmbedding,

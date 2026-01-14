@@ -95,10 +95,10 @@ func GetClients() (*mongo.Client, openai.Client, error) {
 	mongoConnectionString := os.Getenv("MONGO_CONNECTION_STRING")
 	if mongoConnectionString == "" {
 		return nil, openai.Client{}, fmt.Errorf("MONGO_CONNECTION_STRING environment variable is required. " +
-			"Set it to your Cosmos DB connection string or use GetClientsPasswordless() for OIDC auth")
+			"Set it to your DocumentDB connection string or use GetClientsPasswordless() for OIDC auth")
 	}
 
-	// Create MongoDB client with optimized settings for Cosmos DB
+	// Create MongoDB client with optimized settings for DocumentDB
 	clientOptions := options.Client().
 		ApplyURI(mongoConnectionString).
 		SetMaxPoolSize(50).
