@@ -22,6 +22,9 @@ param location string
 @description('Id of the principal to assign database and application roles.')
 param deploymentUserPrincipalId string = ''
 
+@description('Object ID of the current user (for admin access to DocumentDB)')
+param currentUserPrincipalId string = ''
+
 @description('Username for DocumentDB admin user')
 param documentDbAdminUsername string
 
@@ -81,6 +84,7 @@ module openAi 'br/public:avm/res/cognitive-services/account:0.7.1' = {
     kind: 'OpenAI'
     sku: 'S0'
     customSubDomainName: openAiServiceName
+    disableLocalAuth: false
     networkAcls: {
       defaultAction: 'Allow'
       bypass: 'AzureServices'
@@ -134,6 +138,7 @@ module documentDbCluster './documentdb.bicep' = {
     adminPassword: documentDbAdminPassword
     managedIdentityPrincipalId: managedIdentity.outputs.resourceId
     managedIdentityObjectId: managedIdentity.outputs.principalId
+    currentUserPrincipalId: currentUserPrincipalId
     serverVersion: '8.0'
     shardCount: 1
     storageSizeGb: 32
@@ -164,6 +169,11 @@ output AZURE_OPENAI_EMBEDDING_MODEL string = embeddingModelName
 output AZURE_OPENAI_EMBEDDING_DEPLOYMENT string = embeddingModelName
 output AZURE_OPENAI_EMBEDDING_ENDPOINT string = openAi.outputs.endpoint
 output AZURE_OPENAI_EMBEDDING_API_VERSION string = embeddingModelApiVersion
+
+// Managed Identity outputs
+output AZURE_MANAGED_IDENTITY_ID string = managedIdentity.outputs.resourceId
+output AZURE_MANAGED_IDENTITY_PRINCIPAL_ID string = managedIdentity.outputs.principalId
+output AZURE_MANAGED_IDENTITY_CLIENT_ID string = managedIdentity.outputs.clientId
 
 // DocumentDB outputs
 output AZURE_DOCUMENTDB_CLUSTER string = documentDbCluster.outputs.clusterName

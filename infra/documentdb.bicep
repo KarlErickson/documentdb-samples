@@ -21,6 +21,9 @@ param managedIdentityPrincipalId string = ''
 @description('Managed identity principal ID (object ID) for database user registration')
 param managedIdentityObjectId string = ''
 
+@description('Current user principal ID (object ID) for database user registration')
+param currentUserPrincipalId string = ''
+
 @description('Resource tags.')
 param tags object = {}
 
@@ -124,7 +127,7 @@ resource firewallRulesAllowAll 'Microsoft.DocumentDB/mongoClusters/firewallRules
 }
 
 // Register managed identity as an administrative user on the cluster
-resource managedIdentityUser 'Microsoft.DocumentDB/mongoClusters/users@2025-09-01' = if (managedIdentityObjectId != '') {
+resource managedIdentityUser 'Microsoft.DocumentDB/mongoClusters/users@2025-09-01' = {
   parent: cluster
   name: managedIdentityObjectId
   properties: {
@@ -132,6 +135,26 @@ resource managedIdentityUser 'Microsoft.DocumentDB/mongoClusters/users@2025-09-0
       type: 'MicrosoftEntraID'
       properties: {
         principalType: 'servicePrincipal'
+      }
+    }
+    roles: [
+      {
+        db: 'admin'
+        role: 'root'
+      }
+    ]
+  }
+}
+
+// Register current user as an administrative user on the cluster
+resource currentUserAdminUser 'Microsoft.DocumentDB/mongoClusters/users@2025-09-01' = {
+  parent: cluster
+  name: currentUserPrincipalId
+  properties: {
+    identityProvider: {
+      type: 'MicrosoftEntraID'
+      properties: {
+        principalType: 'user'
       }
     }
     roles: [
