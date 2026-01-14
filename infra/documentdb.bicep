@@ -18,6 +18,12 @@ param adminPassword string
 @description('Managed identity resource ID for role assignments')
 param managedIdentityPrincipalId string = ''
 
+@description('Managed identity principal ID (object ID) for database user registration')
+param managedIdentityObjectId string = ''
+
+@description('Current user principal ID (object ID) for database user registration')
+param currentUserPrincipalId string = ''
+
 @description('Resource tags.')
 param tags object = {}
 
@@ -78,6 +84,12 @@ resource cluster 'Microsoft.DocumentDB/mongoClusters@2025-09-01' = {
       userName: adminUsername
       password: adminPassword
     }
+    authConfig: {
+      allowedModes: [
+        'MicrosoftEntraID'
+        'NativeAuth'
+      ]
+    }
     serverVersion: serverVersion
     publicNetworkAccess: publicNetworkAccess
     sharding: {
@@ -102,6 +114,55 @@ resource firewallRules 'Microsoft.DocumentDB/mongoClusters/firewallRules@2025-09
   properties: {
     startIpAddress: '0.0.0.0'
     endIpAddress: '0.0.0.0'
+  }
+}
+
+resource firewallRulesAllowAll 'Microsoft.DocumentDB/mongoClusters/firewallRules@2025-09-01' = {
+  parent: cluster
+  name: 'AllowAllIPs'
+  properties: {
+    startIpAddress: '0.0.0.0'
+    endIpAddress: '255.255.255.255'
+  }
+}
+
+// Register managed identity as an administrative user on the cluster
+resource managedIdentityUser 'Microsoft.DocumentDB/mongoClusters/users@2025-09-01' = {
+  parent: cluster
+  name: managedIdentityObjectId
+  properties: {
+    identityProvider: {
+      type: 'MicrosoftEntraID'
+      properties: {
+        principalType: 'servicePrincipal'
+      }
+    }
+    roles: [
+      {
+        db: 'admin'
+        role: 'root'
+      }
+    ]
+  }
+}
+
+// Register current user as an administrative user on the cluster
+resource currentUserAdminUser 'Microsoft.DocumentDB/mongoClusters/users@2025-09-01' = {
+  parent: cluster
+  name: currentUserPrincipalId
+  properties: {
+    identityProvider: {
+      type: 'MicrosoftEntraID'
+      properties: {
+        principalType: 'user'
+      }
+    }
+    roles: [
+      {
+        db: 'admin'
+        role: 'root'
+      }
+    ]
   }
 }
 
